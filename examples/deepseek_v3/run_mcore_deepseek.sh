@@ -8,12 +8,12 @@ export CUDA_DEVICE_MAX_CONNECTIONS=1
 export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true # for PyTorch >= 2.6
 
 if [ $ENV = dsw ]; then
-    export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
     MASTER_ADDR=localhost
     MASTER_PORT=$(shuf -n 1 -i 10000-65535)
     NNODES=1
     NODE_RANK=0
-    GPUS_PER_NODE=8
+    GPUS_PER_NODE=4
 elif [ $ENV = dlc ]; then
     NNODES=${WORLD_SIZE}
     NODE_RANK=${RANK}
@@ -75,7 +75,7 @@ if [ $MODEL_SIZE = A37B ]; then
 
 HIDDEN_SIZE=7168
 NUM_ATTENTION_HEADS=128
-NUM_LAYERS=61
+NUM_LAYERS=1
 INTERMEDIATE_SIZE=18432
 MOE_INTERMEDIATE_SIZE=2048
 MAX_POSITION_EMBEDDINGS=163840
@@ -111,14 +111,14 @@ moe_options=" \
     --moe-router-score-function sigmoid \
     --moe-router-bias-update-rate 0.001 \
     --moe-aux-loss-coeff 0.001 \
-    --moe-layer-freq '([0]*3+[1]*58)' \
+    --moe-layer-freq '([1])' \
     --moe-shared-expert-intermediate-size $((${MOE_INTERMEDIATE_SIZE} * ${NUM_SHARED_EXPERTS} )) \
     --q-lora-rank ${Q_LORA_RANK} \
     --kv-lora-rank ${KV_LORA_RANK} \
     --qk-nope-head-dim ${QK_NOPE_HEAD_DIM} \
     --qk-rope-head-dim ${QK_ROPE_HEAD_DIM} \
     --v-head-dim ${V_HEAD_DIM} \
-    --mtp-num-layers 1 \
+    --mtp-num-layers 0 \
     "
 
 mtp_options=""
@@ -266,9 +266,9 @@ if [ $SFT = true ]; then
          --calculate-per-token-loss \
          --train-mode finetune"
 else
-    TRAIN_ITERS=$(( ${TRAIN_TOKENS} / ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
-    LR_WARMUP_ITERS=$(( ${WARMUP_TOKENS}  / ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
-    LR_DECAY_ITERS=$(( ${TRAIN_TOKENS} /  ${GLOBAL_BATCH_SIZE} / ${SEQ_LEN} ))
+    TRAIN_ITERS=${25}
+    LR_WARMUP_ITERS=${26}
+    LR_DECAY_ITERS=$(( ${TRAIN_ITERS} - ${LR_WARMUP_ITERS}))
     PREFIX="pretrain-mcore-deepseek-v3-${MODEL_SIZE}-lr-${LR}-minlr-${MIN_LR}-bs-${BATCH_SIZE}-gbs-${GLOBAL_BATCH_SIZE}-seqlen-${SEQ_LEN}"
     sft_options=" \
         --train-mode pretrain"
@@ -367,6 +367,7 @@ megatron_options="  \
         --transformer-impl transformer_engine \
         --no-masked-softmax-fusion \
         --use-rope-scaling \
+        --no-gradient-accumulation-fusion
         "
 
 run_cmd="torchrun $DISTRIBUTED_ARGS pretrain_deepseek.py

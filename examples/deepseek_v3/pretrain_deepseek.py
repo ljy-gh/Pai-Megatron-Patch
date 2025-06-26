@@ -137,6 +137,7 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel]:
 if __name__ == "__main__":
     from megatron_patch.template.helper import forward_step
     train_valid_test_datasets_provider.is_distributed = True
+    print("Enter pretrain deepseek")
 
     pretrain(
         train_valid_test_datasets_provider,
