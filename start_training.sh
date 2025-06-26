@@ -10,12 +10,12 @@ A37B   \
 1024  \
 0  \
 bf16  \
-2   \
-1  \
+1   \
+2  \
 1 \
 1 \
-4 \
-true \
+2 \
+false \
 true   \
 false \
 false \
