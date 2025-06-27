@@ -364,10 +364,11 @@ megatron_options="  \
         --qk-layernorm \
         --multi-latent-attention \
         --ckpt-format torch \
-        --transformer-impl transformer_engine \
+        --transformer-impl local \
         --no-masked-softmax-fusion \
         --use-rope-scaling \
-        --no-gradient-accumulation-fusion
+        --no-gradient-accumulation-fusion \
+        --no-persist-layer-norm
         "
 
 run_cmd="torchrun $DISTRIBUTED_ARGS pretrain_deepseek.py
