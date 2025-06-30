@@ -368,7 +368,8 @@ megatron_options="  \
         --no-masked-softmax-fusion \
         --use-rope-scaling \
         --no-gradient-accumulation-fusion \
-        --no-persist-layer-norm
+        --no-persist-layer-norm \
+        --dualpipev True
         "
 
 run_cmd="torchrun $DISTRIBUTED_ARGS pretrain_deepseek.py
