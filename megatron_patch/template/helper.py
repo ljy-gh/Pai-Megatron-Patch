@@ -40,7 +40,8 @@ def get_batch(data_iterator):
     args = get_args()
 
     # TODO: this is pretty hacky, find a better way
-    if (not mpu.is_pipeline_first_stage()) and (not mpu.is_pipeline_last_stage()):
+    if ((not mpu.is_pipeline_first_stage()) and (not mpu.is_pipeline_last_stage())) \
+        or (mpu.is_pipeline_last_stage() and args.dualpipev):
         packed_seq_params = None
         if args.dataset == 'MMAP' and args.train_mode == "finetune" and args.reset_position_ids:
             position_ids = get_position_id_on_this_tp_rank_idxmap_sft_packing(data_iterator)
@@ -179,6 +180,28 @@ def forward_step(data_iterator, model):
     # Get the batch.
     timers("batch-generator", log_level=2).start()
     tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = get_batch(data_iterator)
+    timers("batch-generator").stop()
+    if 'loss_mask' in inspect.signature(GPTModel.forward).parameters:
+        # NOTE: MTP-head (since 0328) requires loss_mask to compute correct loss scale.
+        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, loss_mask=loss_mask)
+    else:
+        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params)
+
+    return output_tensor, partial(loss_func, loss_mask, num_seqs)
+
+
+def forward_step_dualpipev(inputs, model):
+    """Forward training step.
+
+    Args:
+        inputs : Inputs to the model
+        model (GPTModel): The GPT Model
+    """
+    timers = get_timers()
+
+    # Get the batch.
+    timers("batch-generator", log_level=2).start()
+    tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = inputs
     timers("batch-generator").stop()
     if 'loss_mask' in inspect.signature(GPTModel.forward).parameters:
         # NOTE: MTP-head (since 0328) requires loss_mask to compute correct loss scale.
