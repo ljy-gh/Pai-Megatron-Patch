@@ -201,7 +201,13 @@ def forward_step_dualpipev(inputs, model):
 
     # Get the batch.
     timers("batch-generator", log_level=2).start()
-    tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = inputs
+    if len(inputs) == 1:
+        tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = (None, None, None, None, None, None, None)
+    elif len(inputs) == 3:
+        tokens, labels, loss_mask = inputs
+        attention_mask, position_ids, num_seqs, packed_seq_params = None, None, None, None
+    else:
+        tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = inputs
     timers("batch-generator").stop()
     if 'loss_mask' in inspect.signature(GPTModel.forward).parameters:
         # NOTE: MTP-head (since 0328) requires loss_mask to compute correct loss scale.

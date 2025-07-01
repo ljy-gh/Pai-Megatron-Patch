@@ -84,9 +84,15 @@ def core_gpt_dataset_config_from_args(args):
         return GPTDatasetConfig(**kwargs)
 
 def is_dataset_built_on_rank():
-    return (
-        mpu.is_pipeline_first_stage() or mpu.is_pipeline_last_stage()
-    ) and mpu.get_tensor_model_parallel_rank() == 0
+    args = get_args()
+    if args.dualpipev:
+        return (
+            mpu.is_pipeline_first_stage()
+        ) and mpu.get_tensor_model_parallel_rank() == 0
+    else:
+        return (
+            mpu.is_pipeline_first_stage() or mpu.is_pipeline_last_stage()
+        ) and mpu.get_tensor_model_parallel_rank() == 0
 
 
 def is_dataset_built_on_rank_packing():

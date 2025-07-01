@@ -4,7 +4,7 @@ sh run_mcore_deepseek.sh  \
 dsw  \
 A37B   \
 1    \
-4 \
+8 \
 1e-5   \
 1e-6   \
 1024  \
