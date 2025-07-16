@@ -190,7 +190,7 @@ def forward_step(data_iterator, model):
     return output_tensor, partial(loss_func, loss_mask, num_seqs)
 
 
-def forward_step_dualpipev(inputs, model):
+def forward_step_dualpipev(inputs, model, chunk_id):
     """Forward training step.
 
     Args:
@@ -211,8 +211,8 @@ def forward_step_dualpipev(inputs, model):
     timers("batch-generator").stop()
     if 'loss_mask' in inspect.signature(GPTModel.forward).parameters:
         # NOTE: MTP-head (since 0328) requires loss_mask to compute correct loss scale.
-        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, loss_mask=loss_mask)
+        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, loss_mask=loss_mask, chunk_id=chunk_id)
     else:
-        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params)
+        output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, chunk_id=chunk_id)
 
     return output_tensor, partial(loss_func, loss_mask, num_seqs)
