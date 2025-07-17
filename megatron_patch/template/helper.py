@@ -216,3 +216,30 @@ def forward_step_dualpipev(inputs, model, chunk_id):
         output_tensor = model(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, chunk_id=chunk_id)
 
     return output_tensor, partial(loss_func, loss_mask, num_seqs)
+
+def attention_forward(inputs, model, chunk_id):
+    """Forward training step.
+
+    Args:
+        inputs : Inputs to the model
+        model (GPTModel): The GPT Model
+    """
+    timers = get_timers()
+
+    # Get the batch.
+    timers("batch-generator", log_level=2).start()
+    if len(inputs) == 1:
+        tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = (None, None, None, None, None, None, None)
+    elif len(inputs) == 3:
+        tokens, labels, loss_mask = inputs
+        attention_mask, position_ids, num_seqs, packed_seq_params = None, None, None, None
+    else:
+        tokens, labels, loss_mask, attention_mask, position_ids, num_seqs, packed_seq_params = inputs
+    timers("batch-generator").stop()
+    if 'loss_mask' in inspect.signature(GPTModel.forward).parameters:
+        # NOTE: MTP-head (since 0328) requires loss_mask to compute correct loss scale.
+        output_tensor = model.attention_forward(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, loss_mask=loss_mask, chunk_id=chunk_id)
+    else:
+        output_tensor = model.attention_forward(tokens, position_ids, attention_mask, labels=labels, packed_seq_params=packed_seq_params, chunk_id=chunk_id)
+
+    return partial(loss_func, loss_mask, num_seqs)
