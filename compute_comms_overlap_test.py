@@ -72,11 +72,37 @@ for _ in range(WARMUPS):
 torch.cuda.synchronize()
 start = perf_counter()
 
-# with timer() as t:
-out = compute(compute_stream)
-comms(comms_stream)
+# 真正同时启动计算和通信
+# 使用异步方式，避免顺序执行
 
+# 启动计算任务
+def run_compute():
+    with accel.stream(compute_stream):
+        for _ in range(ITERS):
+            out = compute_matrix @ compute_matrix
+    return out
+
+# 启动通信任务  
+def run_comms():
+    with accel.stream(comms_stream):
+        for _ in range(ITERS):
+            dist.all_reduce(comms_matrix)
+
+# 同时启动两个任务
+import threading
+compute_thread = threading.Thread(target=run_compute)
+comms_thread = threading.Thread(target=run_comms)
+
+compute_thread.start()
+comms_thread.start()
+
+# 等待两个任务完成
+compute_thread.join()
+comms_thread.join()
+
+# 确保GPU操作完成
 torch.cuda.synchronize()
+
 
 end = perf_counter()
 print(f"Time: {end - start}")
