@@ -343,6 +343,7 @@ megatron_options="  \
         --log-validation-ppl-to-tensorboard \
         --tensor-model-parallel-size ${TP} \
         --pipeline-model-parallel-size ${PP} \
+        --num-virtual-stages-per-pipeline-rank 2 \
         --context-parallel-size ${CP} \
         --no-load-optim \
         --no-load-rng \
