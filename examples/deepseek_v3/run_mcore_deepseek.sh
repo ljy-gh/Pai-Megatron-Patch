@@ -75,7 +75,7 @@ if [ $MODEL_SIZE = A37B ]; then
 
 HIDDEN_SIZE=7168
 NUM_ATTENTION_HEADS=128
-NUM_LAYERS=2
+NUM_LAYERS=4
 INTERMEDIATE_SIZE=18432
 MOE_INTERMEDIATE_SIZE=2048
 MAX_POSITION_EMBEDDINGS=163840
@@ -111,7 +111,7 @@ moe_options=" \
     --moe-router-score-function sigmoid \
     --moe-router-bias-update-rate 0.001 \
     --moe-aux-loss-coeff 0.001 \
-    --moe-layer-freq '([1]*2)' \
+    --moe-layer-freq '([1]*4)' \
     --moe-shared-expert-intermediate-size $((${MOE_INTERMEDIATE_SIZE} * ${NUM_SHARED_EXPERTS} )) \
     --q-lora-rank ${Q_LORA_RANK} \
     --kv-lora-rank ${KV_LORA_RANK} \
