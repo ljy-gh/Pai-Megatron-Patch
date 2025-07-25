@@ -87,7 +87,7 @@ QK_ROPE_HEAD_DIM=64
 V_HEAD_DIM=128
 ROPE_THETA=10000
 SCALE_FACTOR=40
-NUM_EXPERTS=32
+NUM_EXPERTS=8
 ROUTER_TOPK=8
 NUM_SHARED_EXPERTS=1
 RMS_NORM_EPS=1e-6
@@ -96,8 +96,8 @@ moe_options=" \
     --moe-grouped-gemm \
     --moe-token-dispatcher-type alltoall \
     --moe-router-topk ${ROUTER_TOPK} \
-    --moe-router-group-topk 4 \
-    --moe-router-num-groups 8 \
+    --moe-router-group-topk 1 \
+    --moe-router-num-groups 1 \
     --num-experts ${NUM_EXPERTS} \
     --expert-model-parallel-size ${EP} \
     --expert-tensor-parallel-size ${ETP} \
