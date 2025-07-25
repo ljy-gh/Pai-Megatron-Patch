@@ -20,7 +20,6 @@ elif [ $ENV = dlc ]; then
     GPUS_PER_NODE=${KUBERNETES_CONTAINER_RESOURCE_GPU:-8}
 fi
 
-
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
 
 ### BASE CONFIG ###
@@ -164,9 +163,9 @@ if [ $AC = full ]; then
         exit -1
     fi
     activation_checkpoint_options=" \
-		    --recompute-method uniform \
+            --recompute-method uniform \
             --recompute-num-layers ${MP_AC_LAYERS} \
-		    --recompute-granularity full"
+            --recompute-granularity full"
 elif [ $AC = sel ]; then
     activation_checkpoint_options=" \
         --recompute-activations"
@@ -175,8 +174,8 @@ elif [ $AC = none ]; then
     "
 elif [ $AC = offload ]; then
     activation_checkpoint_options=" \
-		    --cpu-offloading \
-		    --cpu-offloading-num-layers ${MP_AC_LAYERS}"
+            --cpu-offloading \
+            --cpu-offloading-num-layers ${MP_AC_LAYERS}"
     if [ $TP_COMM_OVERLAP -eq 1 ]; then
         echo "Disable --overlap-grad-reduce and --overlap-param-gather when cpu offloading is on..."
         comm_overlap_option="\
@@ -189,7 +188,7 @@ fi
 
 if [ $PR = fp16 ]; then
     pr_options=" \
-		    --fp16 \
+            --fp16 \
             --apply-query-key-layer-scaling"
     export NVTE_APPLY_QK_LAYER_SCALING=1
 elif [ $PR = bf16 ]; then
@@ -210,17 +209,16 @@ fi
 
 if [ $DO = true ]; then
     do_option=" \
-		    --use-distributed-optimizer"
+            --use-distributed-optimizer"
 
 elif [ $DO = false ]; then
     do_option=" \
                     "
 fi
 
-
 if [ $SP = true ] && [ $TP -gt 1 ]; then
     sp_option=" \
-		    --sequence-parallel"
+            --sequence-parallel"
 
 elif [ $SP = false ]; then
     sp_option=" \
@@ -335,7 +333,7 @@ megatron_options="  \
         --log-interval 1 \
         --log-throughput \
         --eval-interval 10000 \
-        --eval-iters 10 \
+        --eval-iters 1 \
         --save-interval ${SAVE_INTERVAL} \
         --tensorboard-queue-size 1 \
         --tensorboard-dir ${TENSORBOARD_DIR} \
