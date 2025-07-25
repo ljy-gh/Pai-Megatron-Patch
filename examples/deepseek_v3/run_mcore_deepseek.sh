@@ -335,7 +335,7 @@ megatron_options="  \
         --log-interval 1 \
         --log-throughput \
         --eval-interval 10000 \
-        --eval-iters 10 \
+        --eval-iters 1 \
         --save-interval ${SAVE_INTERVAL} \
         --tensorboard-queue-size 1 \
         --tensorboard-dir ${TENSORBOARD_DIR} \
