@@ -20,7 +20,6 @@ elif [ $ENV = dlc ]; then
     GPUS_PER_NODE=${KUBERNETES_CONTAINER_RESOURCE_GPU:-8}
 fi
 
-
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
 
 ### BASE CONFIG ###
@@ -75,7 +74,7 @@ if [ $MODEL_SIZE = A37B ]; then
 
 HIDDEN_SIZE=7168
 NUM_ATTENTION_HEADS=128
-NUM_LAYERS=4
+NUM_LAYERS=2
 INTERMEDIATE_SIZE=18432
 MOE_INTERMEDIATE_SIZE=2048
 MAX_POSITION_EMBEDDINGS=163840
@@ -111,7 +110,7 @@ moe_options=" \
     --moe-router-score-function sigmoid \
     --moe-router-bias-update-rate 0.001 \
     --moe-aux-loss-coeff 0.001 \
-    --moe-layer-freq '([1]*4)' \
+    --moe-layer-freq '([1]*2)' \
     --moe-shared-expert-intermediate-size $((${MOE_INTERMEDIATE_SIZE} * ${NUM_SHARED_EXPERTS} )) \
     --q-lora-rank ${Q_LORA_RANK} \
     --kv-lora-rank ${KV_LORA_RANK} \
@@ -164,9 +163,9 @@ if [ $AC = full ]; then
         exit -1
     fi
     activation_checkpoint_options=" \
-		    --recompute-method uniform \
+            --recompute-method uniform \
             --recompute-num-layers ${MP_AC_LAYERS} \
-		    --recompute-granularity full"
+            --recompute-granularity full"
 elif [ $AC = sel ]; then
     activation_checkpoint_options=" \
         --recompute-activations"
@@ -175,8 +174,8 @@ elif [ $AC = none ]; then
     "
 elif [ $AC = offload ]; then
     activation_checkpoint_options=" \
-		    --cpu-offloading \
-		    --cpu-offloading-num-layers ${MP_AC_LAYERS}"
+            --cpu-offloading \
+            --cpu-offloading-num-layers ${MP_AC_LAYERS}"
     if [ $TP_COMM_OVERLAP -eq 1 ]; then
         echo "Disable --overlap-grad-reduce and --overlap-param-gather when cpu offloading is on..."
         comm_overlap_option="\
@@ -189,7 +188,7 @@ fi
 
 if [ $PR = fp16 ]; then
     pr_options=" \
-		    --fp16 \
+            --fp16 \
             --apply-query-key-layer-scaling"
     export NVTE_APPLY_QK_LAYER_SCALING=1
 elif [ $PR = bf16 ]; then
@@ -210,17 +209,16 @@ fi
 
 if [ $DO = true ]; then
     do_option=" \
-		    --use-distributed-optimizer"
+            --use-distributed-optimizer"
 
 elif [ $DO = false ]; then
     do_option=" \
                     "
 fi
 
-
 if [ $SP = true ] && [ $TP -gt 1 ]; then
     sp_option=" \
-		    --sequence-parallel"
+            --sequence-parallel"
 
 elif [ $SP = false ]; then
     sp_option=" \
@@ -335,7 +333,7 @@ megatron_options="  \
         --log-interval 1 \
         --log-throughput \
         --eval-interval 10000 \
-        --eval-iters 10 \
+        --eval-iters 1 \
         --save-interval ${SAVE_INTERVAL} \
         --tensorboard-queue-size 1 \
         --tensorboard-dir ${TENSORBOARD_DIR} \
@@ -343,7 +341,6 @@ megatron_options="  \
         --log-validation-ppl-to-tensorboard \
         --tensor-model-parallel-size ${TP} \
         --pipeline-model-parallel-size ${PP} \
-        --num-virtual-stages-per-pipeline-rank 2 \
         --context-parallel-size ${CP} \
         --no-load-optim \
         --no-load-rng \
@@ -370,6 +367,7 @@ megatron_options="  \
         --use-rope-scaling \
         --no-gradient-accumulation-fusion \
         --no-persist-layer-norm \
+        --dualpipev True
         "
 
 run_cmd="torchrun $DISTRIBUTED_ARGS pretrain_deepseek.py
