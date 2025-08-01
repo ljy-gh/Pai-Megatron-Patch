@@ -1,34 +1,45 @@
 import torch
+import time
 
-layer1 = torch.nn.Linear(10, 10)
-layer2 = torch.nn.Linear(10, 10)
+is_staged = True
+class DetachFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x):
+        x_detached = x.detach()
+        x_detached.requires_grad = True
+        return x_detached
 
-x = torch.randn(10)
-x.requires_grad = True
+    @staticmethod
+    def backward(ctx, grad_output):
+        if is_staged:
+            return None
+        else:
+            return grad_output
 
-out1 = layer1(x)
-out1_detached = out1.detach().clone()
-out1_detached.requires_grad = True
-out2 = layer2(out1_detached)
-print("After forward pass:")
-print(f"layer2.weight.grad: {layer2.weight.grad}")
-print(f"out1_detached.grad: {out1_detached.grad}")
-print(f"layer1.weight.grad: {layer1.weight.grad}")
-print(f"x.grad: {x.grad}")
+if __name__ == "__main__":
+    layer1 = torch.nn.Linear(8192, 8192)
+    layer2 = torch.nn.Linear(8192, 8192)
+    layer1.to("cuda")
+    layer2.to("cuda")
+    torch.cuda.manual_seed(0)
 
-out2_grad = torch.randn_like(out2)
-torch.autograd.backward(out2, out2_grad)
-print()
-print("After layer2 backward pass:")
-print(f"layer2.weight.grad: {layer2.weight.grad}")
-print(f"out1_detached.grad: {out1_detached.grad}")
-print(f"layer1.weight.grad: {layer1.weight.grad}")
-print(f"x.grad: {x.grad}")
+    backward_times = []
+    for i in range(10):
+        x = torch.randn(8192).to("cuda")
+        x.requires_grad = True
 
-torch.autograd.backward(out1, out1_detached.grad)
-print()
-print("After layer1 backward pass:")
-print(f"layer2.weight.grad: {layer2.weight.grad}")
-print(f"out1_detached.grad: {out1_detached.grad}")
-print(f"layer1.weight.grad: {layer1.weight.grad}")
-print(f"x.grad: {x.grad}")
+        out1 = layer1(x)
+        out1_detached = DetachFunction.apply(out1)
+        out1_detached.retain_grad()
+        out2 = layer2(out1_detached)
+
+        out2_grad = torch.randn_like(out2)
+        start = time.perf_counter()
+        torch.autograd.backward(out2, out2_grad, retain_graph=True)
+
+        torch.autograd.backward(out1, out1_detached.grad)
+        end = time.perf_counter()
+        backward_times.append(end - start)
+
+    print(f"backward_times: {backward_times}")
+    print(f"Backward time: {backward_times[-1]} seconds")
