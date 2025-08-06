@@ -93,7 +93,6 @@ NUM_SHARED_EXPERTS=1
 RMS_NORM_EPS=1e-6
 
 moe_options=" \
-    --moe-grouped-gemm \
     --moe-token-dispatcher-type alltoall \
     --moe-router-topk ${ROUTER_TOPK} \
     --moe-router-group-topk 1 \
@@ -104,7 +103,6 @@ moe_options=" \
     --moe-ffn-hidden-size ${MOE_INTERMEDIATE_SIZE} \
     --moe-router-load-balancing-type seq_aux_loss \
     --moe-router-topk-scaling-factor 2.5 \
-    --moe-shared-expert-overlap \
     --moe-router-enable-expert-bias \
     --mscale 1.0 \
     --mscale-all-dim 1.0 \
@@ -112,13 +110,13 @@ moe_options=" \
     --moe-router-bias-update-rate 0.001 \
     --moe-aux-loss-coeff 0.001 \
     --moe-layer-freq '([1]*2)' \
-    --moe-shared-expert-intermediate-size $((${MOE_INTERMEDIATE_SIZE} * ${NUM_SHARED_EXPERTS} )) \
     --q-lora-rank ${Q_LORA_RANK} \
     --kv-lora-rank ${KV_LORA_RANK} \
     --qk-nope-head-dim ${QK_NOPE_HEAD_DIM} \
     --qk-rope-head-dim ${QK_ROPE_HEAD_DIM} \
     --v-head-dim ${V_HEAD_DIM} \
     --mtp-num-layers 0 \
+    --moe-permute-fusion \
     "
 
 mtp_options=""
